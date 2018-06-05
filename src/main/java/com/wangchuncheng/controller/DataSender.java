@@ -1,5 +1,6 @@
 package com.wangchuncheng.controller;
 
+import com.wangchuncheng.dao.HomeDataDao;
 import com.wangchuncheng.entity.HomeData;
 import com.wangchuncheng.service.InfluxdbService;
 import com.wangchuncheng.service.MqttService;
@@ -13,20 +14,20 @@ import java.util.List;
  */
 @Controller
 public class DataSender implements Runnable {
-    private long limit;// = 1;
-    private String homeID;// = "101";
     @Autowired
-    private InfluxdbService influxdbService;
+    private HomeDataDao homeDataDao;
     @Autowired
     private MqttService mqttService;
+    private long limit;
+    private String homeId;
+
     public DataSender() {
 
     }
 
     @Override
     public void run() {
-        influxdbService.connect();
-        List<HomeData> homeDataList = influxdbService.query(InfluxdbService.MEASUREMENTS, homeID, limit);
+        List<HomeData> homeDataList = homeDataDao.queryForListByLimit(homeId, limit);
         mqttService.publishHomeData(homeDataList);
     }
 
@@ -34,7 +35,7 @@ public class DataSender implements Runnable {
         this.limit = limit;
     }
 
-    public void setHomeID(String homeID) {
-        this.homeID = homeID;
+    public void setHomeId(String homeId) {
+        this.homeId = homeId;
     }
 }

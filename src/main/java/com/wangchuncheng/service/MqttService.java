@@ -1,6 +1,5 @@
 package com.wangchuncheng.service;
 
-import com.wangchuncheng.controller.DataSender;
 import com.wangchuncheng.controller.TaskExecutePool;
 import com.wangchuncheng.entity.HomeData;
 import org.eclipse.paho.client.mqttv3.*;
@@ -152,46 +151,3 @@ public class MqttService {
     }
 }
 
-/**
- * MqttCallBack
- */
-class MyMqttCallback implements MqttCallback {
-    @Autowired
-    TaskExecutePool executePool;
-    @Autowired
-    DataSender dataSender;
-
-    @Override
-    public void connectionLost(Throwable throwable) {
-        System.out.println("Connection lost!!!!!!!!!");
-    }
-
-    /**
-     * Override method. when message arrived.
-     * do request
-     *
-     * @param s
-     * @param mqttMessage
-     * @throws Exception
-     */
-    @Override
-    public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
-        Executor executor = executePool.getExecutor();
-
-        String msg = new String(mqttMessage.getPayload());
-        System.out.println("MQTT message received: " + msg);
-
-        String[] queries = msg.split("_");  //request_homeid_limit
-        if (queries[0].equals("request")) { //do request
-            dataSender.setHomeID(queries[1]);
-            dataSender.setLimit(Long.parseLong(queries[2]));
-            executor.execute(dataSender);
-        }
-        //else {}//Other request
-    }
-
-    @Override
-    public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
-
-    }
-}

@@ -1,6 +1,10 @@
 package com.wangchuncheng.entity;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Data entity class.
@@ -30,6 +34,14 @@ public class HomeData implements Serializable {
         this.temperature = temperature;
         this.humidity = humidity;
         this.pointtime = pointtime;
+    }
+    public List<Mapping> toHomeDataMapping(){
+        List<Mapping> homeDataMappings=new ArrayList<>();
+        homeDataMappings.add(new HomeDataMapping("pointtime",getPointtime()));
+        homeDataMappings.add(new HomeDataMapping("homeId",getHomeId()));
+        homeDataMappings.add(new HomeDataMapping("humidity",getHumidity()));
+        homeDataMappings.add(new HomeDataMapping("temperature",getTemperature()));
+        return homeDataMappings;
     }
     /*
     public HomeData(boolean hasHuman, boolean smoke, String homeId, double temperature, double humidity, double brightness, long pointtime) {

@@ -1,7 +1,7 @@
 package com.wangchuncheng.controller;
 
+import com.wangchuncheng.dao.HomeDataDao;
 import com.wangchuncheng.entity.HomeData;
-import com.wangchuncheng.service.InfluxdbService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
@@ -15,7 +15,7 @@ import java.util.Date;
 @Controller
 public class DataEmulator implements Runnable {
     @Autowired
-    private InfluxdbService influxdbService;
+    private HomeDataDao homeDataDao;
 
     public DataEmulator() {
     }
@@ -60,8 +60,7 @@ public class DataEmulator implements Runnable {
         /**
          * measurement : homedata
          */
-        influxdbService.connect();
-        influxdbService.writeToInfluxdb(homeData, InfluxdbService.MEASUREMENTS);
+        homeDataDao.writeToDatabase(homeData);
     }
 
     public final String[] preHomeIds = new String[]{      //10 floors
