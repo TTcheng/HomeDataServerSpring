@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
  * Influxdb Service.
  * this class storage Object to influxdb and query from influxdb.
  */
+@SuppressWarnings("unused")
 public class InfluxdbService {
     private String url;
     private String user;
@@ -22,28 +23,22 @@ public class InfluxdbService {
     private String retention;
     private int batchNum;
 
-    InfluxDB influxDB;//InfluxDBFactory.connect(url, user, password);
-    BatchPoints batchPoints;
-
-    public InfluxdbService() {
-        connect();
-    }
+    private InfluxDB influxDB;
 
     /**
      * 将给定home data写入influxdb的数据表
      *
-     * @param mappingsList
-     * @param measurement
-     * @return status code:int
+     * @param mappingsList 映射列表
+     * @param measurement  measurement
      */
-    public int writeToInfluxdb(List<List<Mapping>> mappingsList, String measurement,String dbName) {
+    public void writeToInfluxdb(List<List<Mapping>> mappingsList, String measurement, String dbName) {
 
         // Flush every 2000 Points, at least every 1000ms
-        // influxDB.enableBatch(1, 1, TimeUnit.MILLISECONDS);
+        //启用批量influxDB.enableBatch(1, 1, TimeUnit.MILLISECONDS);
 
-        batchPoints = BatchPoints
+        BatchPoints batchPoints = BatchPoints
                 .database(dbName)
-//                .retentionPolicy(retention)
+                // .retentionPolicy(retention)
                 .consistency(InfluxDB.ConsistencyLevel.ALL)
                 .build();
         //get a mapping
@@ -58,9 +53,9 @@ public class InfluxdbService {
                 String key = mapping.getKey();
                 Object value = mapping.getValue();
                 if (value instanceof Long || value instanceof Integer) {
-                    point.addField(key, (Long) value);
+                    point.addField(key, (Number) value);
                 } else if (value instanceof Float || value instanceof Double) {
-                    point.addField(key, (Double) value);
+                    point.addField(key, (Number) value);
                 } else if (value instanceof Number) {
                     point.addField(key, (Number) value);
                 } else if (value instanceof String) {
@@ -72,56 +67,34 @@ public class InfluxdbService {
             batchPoints.point(point.build());//add point to batch points
         }
         influxDB.write(batchPoints);//write to influx
-        return 0;
     }
 
     public QueryResult query(String sql, String dbName) {
-        QueryResult queryResult = influxDB.query(new Query(sql, dbName));
-        return queryResult;
+        return influxDB.query(new Query(sql, dbName));
     }
+
     //    init
     public void connect() {
         influxDB = InfluxDBFactory.connect(url, user, password);
     }//end of initPara
 
-    //getter and setter
-    public String getUrl() {
-        return url;
-    }
-
     public void setUrl(String url) {
         this.url = url;
-    }
-
-    public String getUser() {
-        return user;
     }
 
     public void setUser(String user) {
         this.user = user;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public String getRetention() {
-        return retention;
     }
 
     public void setRetention(String retention) {
         this.retention = retention;
     }
 
-    public int getBatchNum() {
-        return batchNum;
-    }
-
     public void setBatchNum(int batchNum) {
         this.batchNum = batchNum;
     }
-}//end of class
+}

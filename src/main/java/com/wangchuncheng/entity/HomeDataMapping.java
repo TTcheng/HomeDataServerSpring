@@ -1,6 +1,6 @@
 package com.wangchuncheng.entity;
 
-public class HomeDataMapping extends Mapping{
+public class HomeDataMapping implements Mapping {
     private String name;
     private Object value;
 

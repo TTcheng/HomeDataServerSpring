@@ -1,73 +1,62 @@
 package com.wangchuncheng.service;
 
-import com.wangchuncheng.controller.TaskExecutePool;
 import com.wangchuncheng.entity.HomeData;
 import org.eclipse.paho.client.mqttv3.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Executor;
 
 /**
  * Mqtt Service.
  * This class offers MQTT publish homedata service.
  */
-public class MqttService {
-    @Autowired
-    private TaskExecutePool executePool;
-    private int qos;
+public class MqttService implements MqttCallback {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MqttService.class);
+    private Integer qos;
     private String userName;
     private String broker;
     private String password;
     private String pubTopic;
     private String subTopic;
-    private String clientId = "monitor_mqtt_java_" + UUID.randomUUID().toString();
+    private final String clientId = "monitor_mqtt_java_" + UUID.randomUUID().toString();
 
     private MqttClient mqttClient;
     private MqttConnectOptions connOpts;
-    private Executor executor;
+    @Autowired
+    private HomeDataService homeDataService;
 
-    /**
-     * constructor
-     */
-    public MqttService() {
-
-    }
-    public void init(){
-        executor = executePool.getExecutor();
+    public void init() {
         connOpts = new MqttConnectOptions();
         connOpts.setUserName(userName);
         connOpts.setPassword(password.toCharArray());
         try {
             mqttClient = new MqttClient(broker, clientId);
         } catch (MqttException e) {
-            System.out.println("mqttClient = new MqttClient(broker, clientId) ");
-            e.printStackTrace();
+            LOGGER.error("mqttClient = new MqttClient(broker, clientId) ", e);
         }
-        mqttClient.setCallback(new MyMqttCallback());
+        mqttClient.setCallback(this);
         connect();
     }
-    /**
-     * connect
-     */
-    public void connect() {
+
+    private void connect() {
         try {
             mqttClient.connect(connOpts);
-            System.out.println("连接建立成功");
+            LOGGER.debug("连接建立成功");
             mqttClient.subscribe(subTopic);
-            System.out.println("Subscribed to topic: " + subTopic);
+            LOGGER.debug("Subscribed to topic: {}", subTopic);
         } catch (MqttException e) {
-            e.printStackTrace();
-            System.out.println("连接建立失败");
+            LOGGER.error("连接建立失败", e);
         }
     }
 
     /**
      * pub msg:String using given topic
      *
-     * @param msg
-     * @param topic
+     * @param msg   消息
+     * @param topic 主题
      */
     private void pub(String msg, String topic) {
         MqttMessage message = new MqttMessage(msg.getBytes());
@@ -76,74 +65,72 @@ public class MqttService {
         try {
             mqttClient.publish(topic, message);
         } catch (MqttException e) {
-            e.printStackTrace();
-            System.out.println("发布失败！");
+            LOGGER.error("发布失败", e);
         }
     }
 
     /**
      * publish home data list
      *
-     * @param homeDataList
-     * @return status code:int
+     * @param homeDataList 数据列表
      */
-    public int publishHomeData(List<HomeData> homeDataList) {
-        if (mqttClient != null) {
-
-        } else {
+    public void publishHomeData(List<HomeData> homeDataList) {
+        if (mqttClient == null) {
             connect();
-            System.out.println("mqtt client is null 开始重连！");
+            LOGGER.debug("mqtt client is null 开始重连！");
         }
-        for (int i = 0; i < homeDataList.size(); i++) {
-            pub(homeDataList.get(i).toString(), pubTopic);
+        for (HomeData homeData : homeDataList) {
+            pub(homeData.toString(), pubTopic);
         }
-        return 0;
     }
 
-    //getter and setter
-
-    public int getQos() {
-        return qos;
+    @Override
+    public void connectionLost(Throwable throwable) {
+        LOGGER.error("Connection lost!!!!!!!!!");
     }
 
-    public void setQos(int qos) {
+    /**
+     * 根据请求返回对应数据
+     */
+    @Override
+    public void messageArrived(String s, MqttMessage mqttMessage) {
+        String msg = new String(mqttMessage.getPayload());
+        LOGGER.debug("MQTT message received: {}", msg);
+
+        String[] queries = msg.split("_");  //request_homeid_limit
+        if (queries[0].equals("request")) { //do request
+            List<HomeData> homeDataList = homeDataService.queryForListByLimit(queries[1], Long.parseLong(queries[2]));
+            this.publishHomeData(homeDataList);
+        } else {
+            LOGGER.error("Unknown request");
+        }
+    }
+
+    @Override
+    public void deliveryComplete(IMqttDeliveryToken iMqttDeliveryToken) {
+        LOGGER.debug("deliveryComplete");
+    }
+
+    // setters
+
+    public void setQos(Integer qos) {
         this.qos = qos;
-    }
-
-    public String getUserName() {
-        return userName;
     }
 
     public void setUserName(String userName) {
         this.userName = userName;
     }
 
-    public String getBroker() {
-        return broker;
-    }
-
     public void setBroker(String broker) {
         this.broker = broker;
-    }
-
-    public String getPassword() {
-        return password;
     }
 
     public void setPassword(String password) {
         this.password = password;
     }
 
-    public String getPubTopic() {
-        return pubTopic;
-    }
-
     public void setPubTopic(String pubTopic) {
         this.pubTopic = pubTopic;
-    }
-
-    public String getSubTopic() {
-        return subTopic;
     }
 
     public void setSubTopic(String subTopic) {

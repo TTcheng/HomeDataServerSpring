@@ -1,8 +1,9 @@
-package com.wangchuncheng.controller;
+package com.wangchuncheng.emulator;
 
-import com.wangchuncheng.dao.HomeDataDao;
+import com.wangchuncheng.service.HomeDataService;
 import com.wangchuncheng.entity.HomeData;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 
 import java.text.DecimalFormat;
@@ -14,10 +15,11 @@ import java.util.Date;
  */
 @Controller
 public class DataEmulator implements Runnable {
-    @Autowired
-    private HomeDataDao homeDataDao;
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataEmulator.class);
+    private HomeDataService homeDataService;
 
-    public DataEmulator() {
+    public DataEmulator(HomeDataService homeDataService) {
+        this.homeDataService = homeDataService;
     }
 
     /**
@@ -26,15 +28,16 @@ public class DataEmulator implements Runnable {
     public void run() {
         int maxtime = 10000000;
         while (maxtime > 0) {
-            for (int i = 0; i < preHomeIds.length; i++) {
-                for (int j = 0; j < sufHomeIds.length; j++) {
-                    emulateHomedata(preHomeIds[i] + sufHomeIds[j]);
+            for (String floor : PRE_HOME_IDS) {
+                for (String room : SUF_HOME_IDS) {
+                    emulateHomedata(floor + room);
                 }
             }
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOGGER.error("InterruptedException", e);
+                Thread.currentThread().interrupt();
             }
             maxtime--;
         }
@@ -43,8 +46,7 @@ public class DataEmulator implements Runnable {
     /**
      * 产生随机homedata
      */
-    public void emulateHomedata(String homeId) {
-//        DateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+    private void emulateHomedata(String homeId) {
         DecimalFormat decimalFormat = new DecimalFormat("#.00");
         HomeData homeData = new HomeData();
 
@@ -56,17 +58,14 @@ public class DataEmulator implements Runnable {
         homeData.setTemperature(Double.parseDouble(decimalFormat.format(temperature)));
         homeData.setHumidity(Double.parseDouble(decimalFormat.format(humidity)));
 
-        System.out.println("emulated : " + homeData);
-        /**
-         * measurement : homedata
-         */
-        homeDataDao.writeToDatabase(homeData);
+        LOGGER.debug("emulated : {}", homeData);
+        homeDataService.writeToDatabase(homeData);
     }
 
-    public final String[] preHomeIds = new String[]{      //10 floors
+    private static final String[] PRE_HOME_IDS = new String[]{      //10 floors
             "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
     };
-    public final String[] sufHomeIds = new String[]{      //9 rooms
+    private static final String[] SUF_HOME_IDS = new String[]{      //9 rooms
             "01", "02", "03", "04", "05", "06", "07", "08", "09"
     };
 }

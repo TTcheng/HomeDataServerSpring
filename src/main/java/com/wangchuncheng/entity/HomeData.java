@@ -2,9 +2,7 @@ package com.wangchuncheng.entity;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Data entity class.
@@ -43,16 +41,6 @@ public class HomeData implements Serializable {
         homeDataMappings.add(new HomeDataMapping("temperature",getTemperature()));
         return homeDataMappings;
     }
-    /*
-    public HomeData(boolean hasHuman, boolean smoke, String homeId, double temperature, double humidity, double brightness, long pointtime) {
-        this.hasHuman = hasHuman;
-        this.smoke = smoke;
-        this.homeId = homeId;
-        this.temperature = temperature;
-        this.humidity = humidity;
-        this.brightness = brightness;
-        this.pointtime = pointtime;
-    }*/
 
     //getter and setter
 
