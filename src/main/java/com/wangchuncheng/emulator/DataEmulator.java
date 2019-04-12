@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 
 import java.text.DecimalFormat;
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * Data Emulator.
@@ -53,7 +53,7 @@ public class DataEmulator implements Runnable {
         double temperature = Math.random() * 120 - 40;  //-40~80℃
         double humidity = Math.random() * 100;        //0~100%RH Relative Humidity
 
-        homeData.setPointtime(new Date().getTime());
+        homeData.setTime(Instant.now());
         homeData.setHomeId(homeId);
         homeData.setTemperature(Double.parseDouble(decimalFormat.format(temperature)));
         homeData.setHumidity(Double.parseDouble(decimalFormat.format(humidity)));

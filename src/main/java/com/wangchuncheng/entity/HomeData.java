@@ -1,71 +1,70 @@
 package com.wangchuncheng.entity;
 
+import org.influxdb.dto.Point;
+import org.springframework.lang.NonNull;
+
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Instant;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Data entity class.
  */
-public class HomeData implements Serializable {
+@SuppressWarnings("unused")
+public class HomeData implements Pointed, Serializable {
+    public static final String FIELD_TIME = "time";
+    public static final String FIELD_HOME_ID = "homeId";
+    public static final String FIELD_TEMPERATURE = "temperature";
+    public static final String FIELD_HUMIDITY = "humidity";
     //    private boolean hasHuman;   //人      true false
 //    private boolean smoke;      //烟雾    true false
+    @NonNull
     private String homeId;      //房间号    1-01 ~ 20-12
-    private double temperature; //温度    -40~80℃
-    private double humidity;    //湿度    相对湿度0~100％RH
+    private Double temperature; //温度    -40~80℃
+    private Double humidity;    //湿度    相对湿度0~100％RH
     //    private double brightness;  //光照度   0.000001~200000lux
-    private long pointtime;
+    @NonNull
+    private Instant time;
 
     public HomeData() {
     }
 
     /**
      * constructor with all param
-     *
-     * @param homeId
-     * @param temperature
-     * @param humidity
-     * @param pointtime
      */
-    public HomeData(String homeId, double temperature, double humidity, long pointtime) {
+    public HomeData(String homeId, double temperature, double humidity, Instant time) {
         this.homeId = homeId;
         this.temperature = temperature;
         this.humidity = humidity;
-        this.pointtime = pointtime;
-    }
-    public List<Mapping> toHomeDataMapping(){
-        List<Mapping> homeDataMappings=new ArrayList<>();
-        homeDataMappings.add(new HomeDataMapping("pointtime",getPointtime()));
-        homeDataMappings.add(new HomeDataMapping("homeId",getHomeId()));
-        homeDataMappings.add(new HomeDataMapping("humidity",getHumidity()));
-        homeDataMappings.add(new HomeDataMapping("temperature",getTemperature()));
-        return homeDataMappings;
+        this.time = time;
     }
 
     //getter and setter
 
-    public double getTemperature() {
+
+    public Double getTemperature() {
         return temperature;
     }
 
-    public void setTemperature(double temperature) {
+    public void setTemperature(Double temperature) {
         this.temperature = temperature;
     }
 
-    public double getHumidity() {
+    public Double getHumidity() {
         return humidity;
     }
 
-    public void setHumidity(double humidity) {
+    public void setHumidity(Double humidity) {
         this.humidity = humidity;
     }
 
-    public long getPointtime() {
-        return pointtime;
+    public Instant getTime() {
+        return time;
     }
 
-    public void setPointtime(long pointtime) {
-        this.pointtime = pointtime;
+    public void setTime(Instant time) {
+        this.time = time;
     }
 
     public String getHomeId() {
@@ -77,12 +76,39 @@ public class HomeData implements Serializable {
     }
 
     @Override
+    public int hashCode() {
+        return homeId.hashCode() & time.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof HomeData) {
+            HomeData target = (HomeData) obj;
+            return Objects.equals(homeId, target.getHomeId())
+                    && Objects.equals(temperature, target.getTemperature())
+                    && Objects.equals(humidity, target.getHumidity())
+                    && Objects.equals(time, target.getTime());
+        }
+        return false;
+    }
+
+    @Override
     public String toString() {
         return "HomeData{" +
                 "homeId='" + homeId + '\'' +
                 ", temperature=" + temperature +
                 ", humidity=" + humidity +
-                ", pointtime=" + pointtime +
+                ", time=" + time +
                 '}';
+    }
+
+    @Override
+    public Point toPoint(final String measurement) {
+        Point.Builder pointBuilder = Point.measurement(measurement);
+        pointBuilder.time(time.toEpochMilli(), TimeUnit.MILLISECONDS);
+        pointBuilder.addField(FIELD_HOME_ID, homeId);
+        pointBuilder.addField(FIELD_HUMIDITY, humidity);
+        pointBuilder.addField(FIELD_TEMPERATURE, temperature);
+        return pointBuilder.build();
     }
 }

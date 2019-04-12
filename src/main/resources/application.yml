@@ -1,0 +1,23 @@
+spring:
+  profiles:
+    active: dev
+  influx:
+    user: admin
+    password: admin
+    url: http:localhost:8086/
+
+datastore:
+  dbName: homedata
+  measurement: homedatas
+  retention: default
+  batchNum: 2000
+  topicName: datahome
+
+#mqtt config
+mqtt:
+  userName: homedata/emulator
+  password: BrHIjdLxTfa/pBLKItyc0UDo2NIl4HAIOqAgt3HOAQ4=
+  brokerURL: tcp://homedata.mqtt.iot.bj.baidubce.com:1883
+  pubTopic: pub_homedata
+  subTopic: req_homedata
+  qos: 1
